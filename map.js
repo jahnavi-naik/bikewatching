@@ -16,6 +16,11 @@ const svg = d3.select('#map').select('svg');
 let stations = [];
 let circles;
 let trips;
+let filteredTrips = [];
+let filteredArrivals = new Map();
+let filteredDepartures = new Map();
+let filteredStations = [];
+let stationFlow = d3.scaleQuantize().domain([0, 1]).range([0, 0.5, 1]);
 
 map.on('load', () => { 
     map.addSource('boston_route', {
@@ -81,8 +86,13 @@ map.on('load', () => {
     d3.csv("https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv").then(data => {
         trips = data;
         console.log("Traffic data loaded", trips);
+
+        for (let trip of trips) {
+            trip.started_at = new Date(trip.started_at);
+            trip.ended_at = new Date(trip.ended_at);
+        }
         
-        departures = d3.rollup(
+        let departures = d3.rollup(
             trips,
             (v) => v.length,
             (d) => d.start_station_id,
@@ -115,7 +125,12 @@ map.on('load', () => {
                 d3.select(this)
                   .append('title')
                   .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
-            });
+            })
+            .style("--departure-ratio", d => stationFlow(d.departures / d.totalTraffic));
+        
+        filterTripsbyTime();
+        updateCircleSizes();
+        
                 
     }).catch(error => {
         console.error("Error loading the traffic data:", error);
@@ -137,3 +152,88 @@ function updatePositions() {
     .attr('cy', d => getCoords(d).cy); // Set the y-position using projected coordinates
 }
 
+let timeFilter = -1;
+const timeSlider = document.getElementById('time-slider');
+const selectedTime = document.getElementById('selected-time');
+const anyTimeLabel = document.getElementById('any-time');
+
+function formatTime(minutes) {
+    const date = new Date(0, 0, 0, 0, minutes);  // Set hours & minutes
+    return date.toLocaleString('en-US', { timeStyle: 'short' }); // Format as HH:MM AM/PM
+}
+
+function updateTimeDisplay() {
+    timeFilter = Number(timeSlider.value);  // Get slider value
+  
+    if (timeFilter === -1) {
+      selectedTime.textContent = '';  // Clear time display
+      anyTimeLabel.style.display = 'block';  // Show "(any time)"
+    } else {
+      selectedTime.textContent = formatTime(timeFilter);  // Display formatted time
+      anyTimeLabel.style.display = 'none';  // Hide "(any time)"
+    }
+  
+    // Trigger filtering logic which will be implemented in the next step
+    filterTripsbyTime();
+    updateCircleSizes();
+  }
+
+function minutesSinceMidnight(date) {
+    return date.getHours() * 60 + date.getMinutes();
+}
+//function minutesSinceMidnight(date) { if (!(date instanceof Date) || isNaN(date)) { console.error("Invalid date:", date); return -1; } return date.getHours() * 60 + date.getMinutes(); }
+
+function filterTripsbyTime() {
+    filteredTrips = timeFilter === -1
+        ? trips
+        : trips.filter((trip) => {
+            const startedMinutes = minutesSinceMidnight(trip.started_at);
+            const endedMinutes = minutesSinceMidnight(trip.ended_at);
+            return (
+              Math.abs(startedMinutes - timeFilter) <= 60 ||
+              Math.abs(endedMinutes - timeFilter) <= 60
+            );
+    });
+  
+    // we need to update the station data here explained in the next couple paragraphs
+    filteredDepartures = d3.rollup(
+        filteredTrips,
+        (v) => v.length,
+        (d) => d.start_station_id,
+    );
+        
+    filteredArrivals = d3.rollup(
+        filteredTrips,
+        (v) => v.length, // count the number of trips
+        (d) => d.end_station_id // group by end station ID
+    );
+
+    filteredStations = stations.map((station) => {
+        let id = station.short_name;
+        station = { ...station }; 
+        station.arrivals = filteredArrivals.get(id) ?? 0;
+        station.departures = filteredDepartures.get(id) ?? 0;
+        station.totalTraffic = station.arrivals + station.departures;
+        return station;
+    });
+
+    updateCircleSizes();
+}
+
+function updateCircleSizes() {
+    const radiusScale = d3
+        .scaleSqrt()
+        .domain([0, d3.max(filteredStations, (d) => d.totalTraffic)])
+        .range(timeFilter === -1 ? [0, 25] : [0, 25]);
+
+    circles
+        .data(filteredStations)
+        .attr('r', (d) => radiusScale(d.totalTraffic))
+        .style("--departure-ratio", d => stationFlow(d.departures / d.totalTraffic))
+        .select('title')  // Update tooltip text
+        .text(d => `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
+}
+
+
+timeSlider.addEventListener('input', updateTimeDisplay);
+updateTimeDisplay();

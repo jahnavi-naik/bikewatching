@@ -11,8 +11,31 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 </head>
 <body>
-    <h1>🚴🏼‍♀️ Bikewatching</h1>
-    <p>This is an interactive graph of bike traffic throughout the day in Boston.</p>
+    <!-- <header>
+        <h1>🚴🏼‍♀️ Bikewatching</h1>
+        Filter by time:
+        <label>
+            <input type="range" id="time-slider" min="-1" max="1439" value="-1">
+            <span id="time-display">
+                <em id="any-time">(any time)</em> 
+                <time id="selected-time"></time>
+            </span>
+        </label>
+    </header> -->
+    <header>
+        <h1>🚴🏼‍♀️ Bikewatching</h1>
+        <div class="header-right">
+            <span>Filter by time:</span>
+            <label>
+                <input type="range" id="time-slider" min="-1" max="1439" value="-1">
+                <span id="time-display">
+                    <em id="any-time">(any time)</em> 
+                    <time id="selected-time"></time>
+                </span>
+            </label>
+        </div>
+    </header>
+
     <div id="map">
         <svg>
         </svg>
@@ -23,5 +46,25 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Load your custom map initialization script -->
     <script src="map.js"></script>
+    <div class="legend">
+        <div>
+            <div class="swatch" style="--departure-ratio: 1"></div>
+            <span>More departures</span>
+        </div>
+        <div>
+            <div class="swatch" style="--departure-ratio: 0.5"></div>
+            <span>Balanced</span>
+        </div>
+        <div>
+            <div class="swatch" style="--departure-ratio: 0"></div>
+            <span>More arrivals</span>
+        </div>
+    </div>
 </body>
 </html>
+
+
+
+
+
+

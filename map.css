@@ -25,4 +25,93 @@ html, body {
 
 circle {
     pointer-events: auto;
+    fill: var(--color);
+}
+
+header {
+    display: flex;
+    justify-content: space-between; /* Space out items */
+    align-items: center; /* Align vertically */
+    width: 100%; /* Span the full width */
+    padding: 1em;
+    box-sizing: border-box;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align slider & text to the right */
+}
+
+#time-slider {
+    width: 100%; /* Ensure it spans full width */
+}
+
+#time-display {
+    text-align: right; /* Right-align the text */
+    width: 100%;
+}
+
+/* Ensure the label stays on the right */
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 30%; /* Adjust this as needed */
+}
+
+em {
+    color: gray;
+    font-style: italic;
+}
+
+
+.legend .swatch, #map circle {
+    --color-departures: steelblue;
+    --color-arrivals: darkorange;
+    --color: color-mix(
+        in oklch,
+        var(--color-departures) calc(100% * var(--departure-ratio)),
+        var(--color-arrivals)
+    );
+}
+
+#map circle {
+    fill: var(--color);
+    stroke: white;
+    stroke-width: 1;
+    opacity: 0.8;
+}
+
+.legend {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+    margin-block: 1rem;
+    background: white;
+    padding: 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Legend items */
+.legend > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Swatch */
+.legend .swatch {
+    width: 16px;
+    height: 16px;
+    background-color: var(--color);
+    border-radius: 3px;
+}
+
+/* Legend text */
+.legend span {
+    font-size: 14px;
+    white-space: nowrap;
 }
